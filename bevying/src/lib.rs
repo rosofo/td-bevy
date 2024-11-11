@@ -1,5 +1,5 @@
-mod app;
-mod systems;
+pub mod app;
+pub mod systems;
 use std::thread::{spawn, JoinHandle};
 
 use anyhow::anyhow;
@@ -10,6 +10,7 @@ use bevy::{
 };
 use kanal::{bounded, Receiver, Sender};
 use pyo3::prelude::*;
+use tracing::{debug, level_filters::LevelFilter, span};
 
 #[pyclass]
 struct Bevy {
@@ -25,13 +26,9 @@ impl Bevy {
         let (tx, rx) = bounded(100);
         let (tx_out, rx_out) = bounded(100);
         let handle = spawn(move || {
-            let mut app = create_app(rx);
-            app.world_mut().observe(move |trigger: Trigger<EchoEvent>| {
-                tx_out
-                    .try_send(trigger.event().0)
-                    .or_else(|e| Err(anyhow!("Failed to send event back to TD: {}", e)))
-                    .unwrap();
-            });
+            let span = span!(tracing::Level::INFO, "bevy_thread");
+            let _enter = span.enter();
+            let mut app = create_app(tx_out, rx);
             app.finish();
             app.cleanup();
 
@@ -41,6 +38,7 @@ impl Bevy {
                     return exit;
                 }
             });
+            debug!("App created ");
             app.run()
         });
         Self { handle, tx, rx_out }
@@ -66,6 +64,11 @@ impl Bevy {
 /// A Python module implemented in Rust.
 #[pymodule]
 fn bevying(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    let appender = tracing_appender::rolling::hourly("logs", "bv.log");
+    tracing_subscriber::fmt()
+        .with_max_level(LevelFilter::INFO)
+        .with_writer(appender)
+        .init();
     m.add_class::<Bevy>()?;
     Ok(())
 }
