@@ -48,7 +48,7 @@ impl Bevy {
         self.rx_out
             .try_recv()
             .map(|opt| opt.ok_or(Err::<f32, anyhow::Error>(anyhow!("no events"))))
-            .or_else(|e| Err(anyhow!("recv error: {}", e)))
+            .map_err(|e| anyhow!("recv error: {}", e))
             .unwrap()
             .unwrap()
     }

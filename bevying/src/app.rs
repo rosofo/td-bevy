@@ -1,10 +1,13 @@
 use std::time::Duration;
 
-use bevy::{app::ScheduleRunnerPlugin, log::LogPlugin, prelude::*};
+use bevy::{app::ScheduleRunnerPlugin, log::LogPlugin, prelude::*, winit::WinitPlugin};
 use kanal::{bounded, Receiver, Sender};
 use tracing::instrument;
 
-use crate::systems::stream::{StreamPlugin, StreamReceiver};
+use crate::systems::{
+    stream::{StreamPlugin, StreamReceiver},
+    td_renderer::TdRendererPlugin,
+};
 
 #[derive(Component)]
 struct Name(String);
@@ -32,9 +35,16 @@ pub fn create_app(tx: Sender<f32>, rx: Receiver<f32>) -> App {
     let echo_system_fn = move |receiver: Res<StreamReceiver>| {
         echo_system.echo_system(receiver);
     };
-    app.add_plugins(MinimalPlugins.set(ScheduleRunnerPlugin::run_once()))
-        .add_plugins(StreamPlugin::new(rx))
-        .add_event::<EchoEvent>()
-        .add_systems(Update, echo_system_fn);
+    app.add_plugins(
+        DefaultPlugins
+            .build()
+            .add(ScheduleRunnerPlugin::run_once())
+            .disable::<WinitPlugin>()
+            .disable::<LogPlugin>(),
+    )
+    .add_plugins(StreamPlugin::new(rx))
+    .add_plugins(TdRendererPlugin)
+    .add_event::<EchoEvent>()
+    .add_systems(Update, echo_system_fn);
     app
 }
