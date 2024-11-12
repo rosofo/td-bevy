@@ -23,7 +23,7 @@ tracing-subscriber = "0.3.18"
 [dependencies.bevy]
 version = "0.14.2"
 default-features = true
-features = ["trace"]
+features = ["dynamic_linking"]
 
 [profile.dev]
 opt-level = 1

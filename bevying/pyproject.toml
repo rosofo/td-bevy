@@ -13,3 +13,4 @@ classifiers = [
 dynamic = ["version"]
 [tool.maturin]
 features = ["pyo3/extension-module"]
+rustc-args = ["-C", "link-arg=-Wl,-rpath,/Users/robinforbes/.rustup/toolchains/nightly-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib"]

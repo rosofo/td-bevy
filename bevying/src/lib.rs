@@ -61,11 +61,11 @@ impl Bevy {
 /// A Python module implemented in Rust.
 #[pymodule]
 fn bevying(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    let appender = tracing_appender::rolling::hourly("logs", "bv.log");
-    tracing_subscriber::fmt()
-        .with_max_level(LevelFilter::INFO)
-        .with_writer(appender)
-        .init();
+    // let appender = tracing_appender::rolling::hourly("logs", "bv.log");
+    // tracing_subscriber::fmt()
+    //     .with_max_level(LevelFilter::INFO)
+    //     .with_writer(appender)
+    //     .init();
     m.add_class::<Bevy>()?;
     Ok(())
 }
