@@ -1,7 +1,6 @@
-use anyhow::{anyhow, bail};
 use bevy::prelude::*;
 use crossbeam_queue::ArrayQueue;
-use kanal::{bounded, Receiver, Sender};
+use kanal::Receiver;
 use tracing::instrument;
 
 #[derive(Resource, Debug)]

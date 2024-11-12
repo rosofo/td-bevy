@@ -1,16 +1,11 @@
-use std::time::Duration;
-
 use bevy::{app::ScheduleRunnerPlugin, log::LogPlugin, prelude::*, winit::WinitPlugin};
-use kanal::{bounded, Receiver, Sender};
+use kanal::{Receiver, Sender};
 use tracing::instrument;
 
 use crate::systems::{
     stream::{StreamPlugin, StreamReceiver},
     td_renderer::TdRendererPlugin,
 };
-
-#[derive(Component)]
-struct Name(String);
 
 #[derive(Event, Debug)]
 pub struct EchoEvent(pub f32);

@@ -3,11 +3,8 @@ pub mod systems;
 use std::thread::{spawn, JoinHandle};
 
 use anyhow::anyhow;
-use app::{create_app, EchoEvent};
-use bevy::{
-    app::{App, AppExit},
-    prelude::Trigger,
-};
+use app::create_app;
+use bevy::app::AppExit;
 use kanal::{bounded, Receiver, Sender};
 use pyo3::prelude::*;
 use tracing::{debug, level_filters::LevelFilter, span};
