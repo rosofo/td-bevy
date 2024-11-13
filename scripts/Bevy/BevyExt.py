@@ -29,4 +29,8 @@ class BevyExt:
             enable_parexec=True,
             enable_keyboard_shortcuts=True,
         )
+        self.ImageData = tdu.Dependency(val=None)
         self.Bevy = Bevy()
+
+    def updateImage(self, data: list):
+        self.ImageData.val = data

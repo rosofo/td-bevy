@@ -1201,6 +1201,7 @@ dependencies = [
  "async-channel",
  "bevy",
  "bevy_mod_debugdump",
+ "crossbeam-channel",
  "crossbeam-queue",
  "image",
  "kanal",
