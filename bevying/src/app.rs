@@ -43,6 +43,7 @@ pub fn create_app(td_buffer: Arc<Mutex<Vec<u8>>>, tx: Sender<f32>, rx: Receiver<
     .add_plugins(StreamPlugin::new(rx))
     .add_plugins(TdRendererPlugin { td_buffer })
     .add_event::<EchoEvent>()
-    .add_systems(Update, echo_system_fn);
+    .add_systems(Update, echo_system_fn)
+    .add_plugins(RenderTestPlugin);
     app
 }

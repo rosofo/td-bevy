@@ -70,9 +70,10 @@ impl Bevy {
     }
 
     fn get_image<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray3<u8>> {
-        PyArray1::from_slice_bound(py, self.image.try_lock().unwrap().as_slice())
+        let arr = PyArray1::from_slice_bound(py, self.image.try_lock().unwrap().as_slice())
             .reshape((720, 1280, 4))
-            .unwrap()
+            .unwrap();
+        arr
     }
 
     fn send(&self, value: f32) {
