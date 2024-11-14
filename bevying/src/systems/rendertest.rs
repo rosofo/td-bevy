@@ -21,15 +21,15 @@ fn update(
     time: Res<Time>,
     mut events: EventReader<TDEventIn<TDEvent>>,
 ) {
-    let factor = events
-        .read()
-        .filter_map(|e| match e.0 {
-            TDEvent::TimeFactor(t) => Some(t),
-            _ => None,
-        })
-        .last()
-        .unwrap_or(1.0);
-    query.get_single_mut().unwrap().noise.offset[0] += (time.delta_seconds() * factor) as f64;
+    let (factor, lac) = events.read().fold((1.0, 1.0), |acc, e| match e {
+        TDEventIn(TDEvent::TimeFactor(f)) => (*f, acc.1),
+        TDEventIn(TDEvent::Lacunarity(o)) => (acc.0, *o),
+    });
+    let mut terrain = query.get_single_mut().unwrap();
+    terrain.noise.offset[0] += (time.delta_seconds() * factor) as f64;
+    if lac != 1.0 {
+        terrain.noise.function.frequency = lac as f64;
+    }
 }
 
 fn setup(mut commands: Commands) {

@@ -26,9 +26,9 @@ use bevy::{
 };
 use crossbeam_channel::{Receiver, Sender};
 use std::sync::{
-        atomic::{AtomicBool, Ordering},
-        Arc,
-    };
+    atomic::{AtomicBool, Ordering},
+    Arc,
+};
 
 use crate::double_buffer::DoubleBuffer;
 
@@ -152,7 +152,7 @@ fn setup(
     });
 
     commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(-2.5, 3.5, 3.0).looking_at(Vec3::ZERO, Vec3::Y),
+        transform: Transform::from_xyz(-2.5, 1.5, 1.0).looking_at(Vec3::ZERO, Vec3::Y),
         tonemapping: Tonemapping::None,
         camera: Camera {
             // render to image

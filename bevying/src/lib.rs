@@ -13,14 +13,34 @@ use bevy::app::AppExit;
 use crossbeam_channel::{bounded, Receiver, Sender};
 use double_buffer::DoubleBuffer;
 use numpy::{PyArray1, PyArray3, PyArrayMethods};
-use pyo3::prelude::*;
+use pyo3::{
+    exceptions::PyTypeError,
+    intern,
+    prelude::*,
+    types::{PyFloat, PyString, PyTuple},
+};
 use systems::td_events::{Name, TDEventChannels, TDEventChannelsBundle, TDEventsPlugin};
 use tracing::{debug, span};
 
-#[pyclass]
 #[derive(Debug, Clone, PartialEq)]
 pub enum TDEvent {
     TimeFactor(f32),
+    Lacunarity(f32),
+}
+
+impl<'py> FromPyObject<'py> for TDEvent {
+    fn extract_bound(ob: &Bound<'py, PyAny>) -> PyResult<Self> {
+        let tup = ob.downcast::<PyTuple>()?;
+        let name = tup.get_item(0)?;
+        let x = tup.get_item(1)?;
+        let x = x.extract()?;
+
+        if &name.downcast::<PyString>()? == "TimeFactor" {
+            Ok(TDEvent::TimeFactor(x))
+        } else {
+            Ok(TDEvent::Lacunarity(x))
+        }
+    }
 }
 
 #[pyclass]
@@ -129,6 +149,5 @@ fn bevying(m: &Bound<'_, PyModule>) -> PyResult<()> {
     //     .with_writer(appender)
     //     .init();
     m.add_class::<Bevy>()?;
-    m.add_class::<TDEvent>()?;
     Ok(())
 }
