@@ -3,6 +3,7 @@ use kanal::{Receiver, Sender};
 use tracing::instrument;
 
 use crate::systems::{
+    rendertest::RenderTestPlugin,
     stream::{StreamPlugin, StreamReceiver},
     td_renderer::TdRendererPlugin,
 };
@@ -40,6 +41,7 @@ pub fn create_app(tx: Sender<f32>, rx: Receiver<f32>) -> App {
     .add_plugins(StreamPlugin::new(rx))
     .add_plugins(TdRendererPlugin)
     .add_event::<EchoEvent>()
-    .add_systems(Update, echo_system_fn);
+    .add_systems(Update, echo_system_fn)
+    .add_plugins(RenderTestPlugin);
     app
 }

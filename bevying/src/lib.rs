@@ -13,6 +13,7 @@ use bevy::{
 };
 use crossbeam_queue::ArrayQueue;
 use kanal::{bounded, Receiver, Sender};
+use numpy::{PyArray1, PyArray3, PyArrayMethods, ToPyArray};
 use pyo3::{
     prelude::*,
     types::{PyFunction, PyList},
@@ -74,8 +75,10 @@ impl Bevy {
             .unwrap()
     }
 
-    fn get_image(&self) -> Vec<u8> {
-        self.image.try_lock().unwrap().clone()
+    fn get_image<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray3<u8>> {
+        PyArray1::from_slice_bound(py, self.image.try_lock().unwrap().as_slice())
+            .reshape((720, 1280, 4))
+            .unwrap()
     }
 
     fn send(&self, value: f32) {

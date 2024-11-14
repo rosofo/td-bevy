@@ -38,15 +38,39 @@ fn setup(
     mut images: ResMut<Assets<Image>>,
     mut td_export: ResMut<TDExport>,
     mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let mut camera = Camera2dBundle::default();
     let dynamic_image = DynamicImage::new_rgb8(1280, 720);
     let mut image = Image::from_dynamic(dynamic_image, true, RenderAssetUsages::all());
     image.texture_descriptor.usage = TextureUsages::all();
     let image_handle = images.add(image);
     let image_target = image_handle.clone().into();
-    camera.camera.target = image_target;
-    commands.spawn(camera);
 
     td_export.handle = Some(image_handle);
+    // cube
+    commands.spawn(PbrBundle {
+        mesh: meshes.add(Cuboid::new(1.0, 1.0, 1.0)),
+        material: materials.add(Color::srgb_u8(124, 144, 255)),
+        transform: Transform::from_xyz(0.0, 0.5, 0.0),
+        ..default()
+    });
+    // light
+    commands.spawn(PointLightBundle {
+        point_light: PointLight {
+            shadows_enabled: true,
+            ..default()
+        },
+        transform: Transform::from_xyz(4.0, 8.0, 4.0),
+        ..default()
+    });
+    // camera
+    commands.spawn(Camera3dBundle {
+        transform: Transform::from_xyz(-2.5, 4.5, 9.0).looking_at(Vec3::ZERO, Vec3::Y),
+        camera: Camera {
+            target: image_target,
+            ..default()
+        },
+        ..default()
+    });
 }
