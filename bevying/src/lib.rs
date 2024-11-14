@@ -18,12 +18,11 @@ use pyo3::{
     prelude::*,
     types::{PyFunction, PyList},
 };
-use systems::td_renderer::TDExportEvent;
 use tracing::{debug, level_filters::LevelFilter, span};
 
 #[pyclass]
 struct Bevy {
-    handle: JoinHandle<AppExit>,
+    handle: Option<JoinHandle<AppExit>>,
     tx: Sender<f32>,
     rx_out: Receiver<f32>,
     image: Arc<Mutex<Vec<u8>>>,
@@ -40,14 +39,9 @@ impl Bevy {
         let handle = spawn(move || {
             let span = span!(tracing::Level::INFO, "bevy_thread");
             let _enter = span.enter();
-            let mut app = create_app(tx_out, rx);
+            let mut app = create_app(image_, tx_out, rx);
             app.finish();
             app.cleanup();
-            app.observe(move |trigger: Trigger<TDExportEvent>| {
-                if let Ok(mut guard) = image_.try_lock() {
-                    guard.copy_from_slice(trigger.event().0.as_slice());
-                }
-            });
 
             app.set_runner(|mut app| loop {
                 app.update();
@@ -59,7 +53,7 @@ impl Bevy {
             app.run()
         });
         Self {
-            handle,
+            handle: Some(handle),
             tx,
             rx_out,
             image,
@@ -85,7 +79,25 @@ impl Bevy {
         self.tx.send(value).unwrap();
     }
     fn running(&self) -> bool {
-        !self.handle.is_finished()
+        !self.handle.as_ref().unwrap().is_finished()
+    }
+    fn status(&mut self) -> String {
+        if self.running() {
+            "Running".to_string()
+        } else {
+            match self.handle.take().unwrap().join() {
+                Ok(a) => format!("Ok {:?}", a),
+                Err(b) => {
+                    if let Some(msg) = b.downcast_ref::<&'static str>() {
+                        msg.to_string()
+                    } else if let Some(msg) = b.downcast_ref::<String>() {
+                        msg.clone()
+                    } else {
+                        format!("?{:?}", b)
+                    }
+                }
+            }
+        }
     }
 }
 

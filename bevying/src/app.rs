@@ -1,3 +1,5 @@
+use std::sync::{Arc, Mutex};
+
 use bevy::{app::ScheduleRunnerPlugin, log::LogPlugin, prelude::*, winit::WinitPlugin};
 use kanal::{Receiver, Sender};
 use tracing::instrument;
@@ -25,7 +27,7 @@ impl EchoSystem {
     }
 }
 
-pub fn create_app(tx: Sender<f32>, rx: Receiver<f32>) -> App {
+pub fn create_app(td_buffer: Arc<Mutex<Vec<u8>>>, tx: Sender<f32>, rx: Receiver<f32>) -> App {
     let mut app = App::new();
     let echo_system = EchoSystem { tx };
     let echo_system_fn = move |receiver: Res<StreamReceiver>| {
@@ -39,9 +41,8 @@ pub fn create_app(tx: Sender<f32>, rx: Receiver<f32>) -> App {
             .disable::<LogPlugin>(),
     )
     .add_plugins(StreamPlugin::new(rx))
-    .add_plugins(TdRendererPlugin)
+    .add_plugins(TdRendererPlugin { td_buffer })
     .add_event::<EchoEvent>()
-    .add_systems(Update, echo_system_fn)
-    .add_plugins(RenderTestPlugin);
+    .add_systems(Update, echo_system_fn);
     app
 }
