@@ -4,10 +4,13 @@ use bevy::{app::ScheduleRunnerPlugin, log::LogPlugin, prelude::*, winit::WinitPl
 use kanal::{Receiver, Sender};
 use tracing::instrument;
 
-use crate::systems::{
-    rendertest::RenderTestPlugin,
-    stream::{StreamPlugin, StreamReceiver},
-    td_renderer::TdRendererPlugin,
+use crate::{
+    double_buffer::DoubleBuffer,
+    systems::{
+        rendertest::RenderTestPlugin,
+        stream::{StreamPlugin, StreamReceiver},
+        td_renderer::TdRendererPlugin,
+    },
 };
 
 #[derive(Event, Debug)]
@@ -27,7 +30,7 @@ impl EchoSystem {
     }
 }
 
-pub fn create_app(td_buffer: Arc<Mutex<Vec<u8>>>, tx: Sender<f32>, rx: Receiver<f32>) -> App {
+pub fn create_app(td_buffer: Arc<DoubleBuffer>, tx: Sender<f32>, rx: Receiver<f32>) -> App {
     let mut app = App::new();
     let echo_system = EchoSystem { tx };
     let echo_system_fn = move |receiver: Res<StreamReceiver>| {

@@ -1,4 +1,5 @@
 pub mod app;
+mod double_buffer;
 pub mod systems;
 use std::{
     sync::{Arc, Mutex},
@@ -12,6 +13,7 @@ use bevy::{
     prelude::{Event, Trigger},
 };
 use crossbeam_queue::ArrayQueue;
+use double_buffer::DoubleBuffer;
 use kanal::{bounded, Receiver, Sender};
 use numpy::{PyArray1, PyArray3, PyArrayMethods, ToPyArray};
 use pyo3::{
@@ -25,7 +27,7 @@ struct Bevy {
     handle: Option<JoinHandle<AppExit>>,
     tx: Sender<f32>,
     rx_out: Receiver<f32>,
-    image: Arc<Mutex<Vec<u8>>>,
+    image: Arc<DoubleBuffer>,
 }
 
 #[pymethods]
@@ -34,7 +36,7 @@ impl Bevy {
     fn new() -> Self {
         let (tx, rx) = bounded(100);
         let (tx_out, rx_out) = bounded(100);
-        let image = Arc::new(Mutex::new(vec![0; 1280 * 720 * 4]));
+        let image = Arc::new(DoubleBuffer::new(720 * 1280 * 4));
         let image_ = Arc::clone(&image);
         let handle = spawn(move || {
             let span = span!(tracing::Level::INFO, "bevy_thread");
@@ -70,7 +72,7 @@ impl Bevy {
     }
 
     fn get_image<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray3<u8>> {
-        let arr = PyArray1::from_slice_bound(py, self.image.try_lock().unwrap().as_slice())
+        let arr = PyArray1::from_slice_bound(py, &self.image.read_buffer())
             .reshape((720, 1280, 4))
             .unwrap();
         arr

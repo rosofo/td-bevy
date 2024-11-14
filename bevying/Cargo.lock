@@ -1239,6 +1239,7 @@ dependencies = [
  "bevy_mod_debugdump",
  "crossbeam-channel",
  "crossbeam-queue",
+ "crossbeam-utils",
  "image",
  "kanal",
  "numpy",

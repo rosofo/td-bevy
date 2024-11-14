@@ -35,6 +35,8 @@ use std::{
     time::Duration,
 };
 
+use crate::double_buffer::DoubleBuffer;
+
 // To communicate between the main world and the render world we need a channel.
 // Since the main world and render world run in parallel, there will always be a frame of latency
 // between the data sent from the render world and the data received in the main world
@@ -57,7 +59,7 @@ struct RenderWorldSender(Sender<Vec<u8>>);
 
 #[derive(Debug)]
 pub struct TdRendererPlugin {
-    pub td_buffer: Arc<Mutex<Vec<u8>>>,
+    pub td_buffer: Arc<DoubleBuffer>,
 }
 
 impl Plugin for TdRendererPlugin {
@@ -84,13 +86,13 @@ struct SceneController {
     name: String,
     width: u32,
     height: u32,
-    td_buffer: Arc<Mutex<Vec<u8>>>,
+    td_buffer: Arc<DoubleBuffer>,
     single_image: bool,
 }
 
 impl SceneController {
     pub fn new(
-        td_buffer: Arc<Mutex<Vec<u8>>>,
+        td_buffer: Arc<DoubleBuffer>,
         width: u32,
         height: u32,
         single_image: bool,
@@ -485,9 +487,9 @@ fn update(
                             .collect();
                     }
 
-                    if let Ok(mut guard) = scene_controller.td_buffer.try_lock() {
-                        guard.copy_from_slice(img_bytes.data.as_slice());
-                    }
+                    let mut buffer = scene_controller.td_buffer.write_buffer();
+                    buffer.copy_from_slice(img_bytes.data.as_slice());
+                    scene_controller.td_buffer.swap();
                 }
                 if scene_controller.single_image {
                     app_exit_writer.send(AppExit::Success);
