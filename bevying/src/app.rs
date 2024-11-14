@@ -1,7 +1,7 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use bevy::{app::ScheduleRunnerPlugin, log::LogPlugin, prelude::*, winit::WinitPlugin};
-use kanal::{Receiver, Sender};
+use crossbeam_channel::{Receiver, Sender};
 use tracing::instrument;
 
 use crate::{

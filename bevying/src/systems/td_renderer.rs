@@ -7,7 +7,7 @@
 //! 4. Expose frame to TD using `scene::update` at `PostUpdate` in `MainWorld`
 
 use bevy::{
-    app::{AppExit, ScheduleRunnerPlugin},
+    app::AppExit,
     core_pipeline::tonemapping::Tonemapping,
     prelude::*,
     render::{
@@ -25,15 +25,10 @@ use bevy::{
     },
 };
 use crossbeam_channel::{Receiver, Sender};
-use std::{
-    ops::{Deref, DerefMut},
-    path::PathBuf,
-    sync::{
+use std::sync::{
         atomic::{AtomicBool, Ordering},
-        Arc, Mutex,
-    },
-    time::Duration,
-};
+        Arc,
+    };
 
 use crate::double_buffer::DoubleBuffer;
 
@@ -120,8 +115,8 @@ enum SceneState {
 
 fn setup(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    meshes: ResMut<Assets<Mesh>>,
+    materials: ResMut<Assets<StandardMaterial>>,
     mut images: ResMut<Assets<Image>>,
     mut scene_controller: ResMut<SceneController>,
     render_device: Res<RenderDevice>,
@@ -452,7 +447,7 @@ fn update(
     mut images: ResMut<Assets<Image>>,
     mut scene_controller: ResMut<SceneController>,
     mut app_exit_writer: EventWriter<AppExit>,
-    mut file_number: Local<u32>,
+    file_number: Local<u32>,
 ) {
     if let SceneState::Render(n) = scene_controller.state {
         if n < 1 {

@@ -1241,7 +1241,6 @@ dependencies = [
  "crossbeam-queue",
  "crossbeam-utils",
  "image",
- "kanal",
  "numpy",
  "pyo3",
  "tracing",

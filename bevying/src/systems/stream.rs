@@ -1,6 +1,6 @@
 use bevy::prelude::*;
+use crossbeam_channel::Receiver;
 use crossbeam_queue::ArrayQueue;
-use kanal::Receiver;
 use tracing::instrument;
 
 #[derive(Resource, Debug)]
@@ -31,7 +31,7 @@ impl Plugin for StreamPlugin {
 
 #[instrument]
 fn read_stream(receiver: Res<StreamReceiver>) {
-    while let Ok(Some(msg)) = receiver.rx.try_recv() {
+    while let Ok(msg) = receiver.rx.try_recv() {
         debug!("Received message: {}", msg);
         receiver.messages.force_push(msg);
     }

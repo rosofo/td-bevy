@@ -2,25 +2,26 @@ pub mod app;
 mod double_buffer;
 pub mod systems;
 use std::{
-    sync::{Arc, Mutex},
+    borrow::Cow,
+    sync::Arc,
     thread::{spawn, JoinHandle},
 };
 
 use anyhow::anyhow;
 use app::create_app;
-use bevy::{
-    app::AppExit,
-    prelude::{Event, Trigger},
-};
-use crossbeam_queue::ArrayQueue;
+use bevy::app::AppExit;
+use crossbeam_channel::{bounded, Receiver, Sender};
 use double_buffer::DoubleBuffer;
-use kanal::{bounded, Receiver, Sender};
-use numpy::{PyArray1, PyArray3, PyArrayMethods, ToPyArray};
-use pyo3::{
-    prelude::*,
-    types::{PyFunction, PyList},
-};
-use tracing::{debug, level_filters::LevelFilter, span};
+use numpy::{PyArray1, PyArray3, PyArrayMethods};
+use pyo3::prelude::*;
+use systems::td_events::{Name, TDEventChannels, TDEventChannelsBundle, TDEventsPlugin};
+use tracing::{debug, span};
+
+#[pyclass]
+#[derive(Debug, Clone, PartialEq)]
+pub enum TDEvent {
+    TimeFactor(f32),
+}
 
 #[pyclass]
 struct Bevy {
@@ -28,6 +29,7 @@ struct Bevy {
     tx: Sender<f32>,
     rx_out: Receiver<f32>,
     image: Arc<DoubleBuffer>,
+    events: (Sender<TDEvent>, Receiver<TDEvent>),
 }
 
 #[pymethods]
@@ -36,12 +38,15 @@ impl Bevy {
     fn new() -> Self {
         let (tx, rx) = bounded(100);
         let (tx_out, rx_out) = bounded(100);
+        let (events_in_tx, events_in_rx) = bounded(100);
+        let (events_out_tx, events_out_rx) = bounded(100);
         let image = Arc::new(DoubleBuffer::new(720 * 1280 * 4));
         let image_ = Arc::clone(&image);
         let handle = spawn(move || {
             let span = span!(tracing::Level::INFO, "bevy_thread");
             let _enter = span.enter();
             let mut app = create_app(image_, tx_out, rx);
+            app.add_plugins(TDEventsPlugin::<TDEvent>::default());
             app.finish();
             app.cleanup();
 
@@ -52,6 +57,13 @@ impl Bevy {
                 }
             });
             debug!("App created ");
+            app.world_mut().spawn(TDEventChannelsBundle {
+                name: Name("events".to_string()),
+                channels: TDEventChannels {
+                    tx: events_out_tx,
+                    rx: events_in_rx,
+                },
+            });
             app.run()
         });
         Self {
@@ -59,15 +71,14 @@ impl Bevy {
             tx,
             rx_out,
             image,
+            events: (events_in_tx, events_out_rx),
         }
     }
 
     fn next(&self) -> f32 {
         self.rx_out
             .try_recv()
-            .map(|opt| opt.ok_or(Err::<f32, anyhow::Error>(anyhow!("no events"))))
             .map_err(|e| anyhow!("recv error: {}", e))
-            .unwrap()
             .unwrap()
     }
 
@@ -81,6 +92,11 @@ impl Bevy {
     fn send(&self, value: f32) {
         self.tx.send(value).unwrap();
     }
+
+    fn trigger(&self, event: TDEvent) {
+        self.events.0.try_send(event).unwrap();
+    }
+
     fn running(&self) -> bool {
         !self.handle.as_ref().unwrap().is_finished()
     }
@@ -113,5 +129,6 @@ fn bevying(m: &Bound<'_, PyModule>) -> PyResult<()> {
     //     .with_writer(appender)
     //     .init();
     m.add_class::<Bevy>()?;
+    m.add_class::<TDEvent>()?;
     Ok(())
 }
